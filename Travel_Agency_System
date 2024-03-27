@@ -1,0 +1,208 @@
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Represents an activity that passengers can sign up for at a specific destination
+class Activity {
+    private String name;
+    private String description;
+    private double cost;
+    private int capacity;
+    private Destination destination;
+    private List<Passenger> signedUpPassengers;
+
+    // Constructor to initialize activity attributes
+    public Activity(String name, String description, double cost, int capacity, Destination destination) {
+        this.name = name;
+        this.description = description;
+        this.cost = cost;
+        this.capacity = capacity;
+        this.destination = destination;
+        this.signedUpPassengers = new ArrayList<>();
+    }
+
+    // Method to sign up a passenger for the activity
+    public boolean signUpPassenger(Passenger passenger) {
+        if (signedUpPassengers.size() < capacity) {
+            signedUpPassengers.add(passenger);
+            passenger.addActivity(this);
+            return true;
+        } else {
+            System.out.println("Activity is full. Cannot sign up more passengers.");
+            return false;
+        }
+    }
+
+    // Getter method for activity name
+    public String getName() {
+        return name;
+    }
+
+    // Getter method for activity cost
+    public double getCost() {
+        return cost;
+    }
+
+    // Getter method for activity destination
+    public Destination getDestination() {
+        return destination;
+    }
+}
+
+// Represents a destination with a list of available activities
+class Destination {
+    private String name;
+    private List<Activity> activityList;
+
+    // Constructor to initialize destination attributes
+    public Destination(String name) {
+        this.name = name;
+        this.activityList = new ArrayList<>();
+    }
+
+    // Method to add an activity to the destination's activity list
+    public void addActivity(Activity activity) {
+        activityList.add(activity);
+    }
+
+    // Getter method for destination name
+    public String getName() {
+        return name;
+    }
+}
+
+// Represents a passenger who can sign up for activities and travel packages
+class Passenger {
+    private String name;
+    private int passengerNumber;
+    private String passengerType;
+    private double balance;
+    private List<Activity> signedUpActivities;
+
+    // Constructor to initialize passenger attributes
+    public Passenger(String name, int passengerNumber, String passengerType, double balance) {
+        this.name = name;
+        this.passengerNumber = passengerNumber;
+        this.passengerType = passengerType;
+        this.balance = balance;
+        this.signedUpActivities = new ArrayList<>();
+    }
+
+    // Method to add an activity to the passenger's signed-up activities list
+    public void addActivity(Activity activity) {
+        signedUpActivities.add(activity);
+        if (!passengerType.equals("Premium")) {
+            double cost = activity.signUpPassenger(this) ? activity.getCost() : 0;
+            if (passengerType.equals("Gold")) {
+                cost -= cost * 0.1; // 10% discount for gold passengers
+            }
+            balance -= cost;
+        }
+    }
+
+    // Getter method for passenger name
+    public String getName() {
+        return name;
+    }
+
+    // Getter method for passenger number
+    public int getPassengerNumber() {
+        return passengerNumber;
+    }
+}
+
+// Represents a travel package containing destinations and activities
+class TravelPackage {
+    private String name;
+    private int passengerCapacity;
+    private List<Destination> itinerary;
+    private List<Passenger> passengerList;
+
+    // Constructor to initialize travel package attributes
+    public TravelPackage(String name, int passengerCapacity) {
+        this.name = name;
+        this.passengerCapacity = passengerCapacity;
+        this.itinerary = new ArrayList<>();
+        this.passengerList = new ArrayList<>();
+    }
+
+    // Method to add a destination to the travel package's itinerary
+    public void addDestination(Destination destination) {
+        itinerary.add(destination);
+    }
+
+    // Method to add a passenger to the travel package
+    public void addPassenger(Passenger passenger) {
+        if (passengerList.size() < passengerCapacity) {
+            passengerList.add(passenger);
+        } else {
+            System.out.println("Cannot add more passengers. Capacity reached.");
+        }
+    }
+}
+
+// Test class for unit testing the travel agency system classes
+public class TravelAgencySystemTest {
+
+    // Test case to verify successful sign up of a passenger for an activity
+    @Test
+    public void testSignUpPassenger_Success() {
+        // Create a destination, activity, and passenger
+        Destination destination = new Destination("Destination 1");
+        Activity activity = new Activity("Activity 1", "Description", 50.0, 5, destination);
+        Passenger passenger = new Passenger("John Doe", 1, "Standard", 200.0);
+
+        assertTrue(activity.signUpPassenger(passenger));
+    }
+
+    // Test case to verify failure in signing up a passenger due to activity capacity limit
+    @Test
+    public void testSignUpPassenger_Failure() {
+        // Create a destination, activity with capacity 1, and two passengers
+        Destination destination = new Destination("Destination 1");
+        Activity activity = new Activity("Activity 1", "Description", 50.0, 1, destination);
+        Passenger passenger1 = new Passenger("John Doe", 1, "Standard", 200.0);
+        Passenger passenger2 = new Passenger("Jane Doe", 2, "Standard", 200.0);
+
+        // First passenger signs up successfully
+        assertTrue(activity.signUpPassenger(passenger1));
+        // Second passenger should fail to sign up due to capacity limit
+        assertFalse(activity.signUpPassenger(passenger2));
+    }
+
+    // Test case to verify addition of an activity to a destination
+    @Test
+    public void testAddActivityToDestination() {
+        Destination destination = new Destination("Destination 1");
+        Activity activity = new Activity("Activity 1", "Description", 50.0, 5, destination);
+
+        destination.addActivity(activity);
+        assertEquals(1, destination.getActivityList().size());
+        assertEquals(activity, destination.getActivityList().get(0));
+    }
+
+    // Test case to verify addition of an activity to a passenger's signed-up activities list
+    @Test
+    public void testAddActivityToPassenger() {
+        Passenger passenger = new Passenger("John Doe", 1, "Standard", 200.0);
+        Activity activity = new Activity("Activity 1", "Description", 50.0, 5, new Destination("Destination"));
+
+        passenger.addActivity(activity);
+        assertEquals(1, passenger.getSignedUpActivities().size());
+        assertEquals(activity, passenger.getSignedUpActivities().get(0));
+    }
+
+    // Test case to verify addition of a passenger to a travel package
+    @Test
+    public void testAddPassengerToTravelPackage() {
+        TravelPackage travelPackage = new TravelPackage("Package 1", 10);
+        Passenger passenger = new Passenger("John Doe", 1, "Standard", 200.0);
+
+        travelPackage.addPassenger(passenger);
+        assertEquals(1, travelPackage.getPassengerList().size());
+        assertEquals(passenger, travelPackage.getPassengerList().get(0));
+    }
+
+  
